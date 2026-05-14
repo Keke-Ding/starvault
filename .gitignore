@@ -1,0 +1,8 @@
+node_modules
+dist
+.env
+.env.local
+*.log
+波谱课件/
+波谱分析复习资料.pdf
+波谱课件.zip
