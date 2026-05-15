@@ -30,14 +30,17 @@ const simplePkg = {
 };
 fs.writeFileSync(path.join(appDir, 'package.json'), JSON.stringify(simplePkg, null, 2));
 
-console.log('Copying production dependencies...');
-const prodDeps = ['express', 'cors'];
-const nodeModulesSrc = path.join(__dirname, '..', 'node_modules');
-const nodeModulesDest = path.join(appDir, 'node_modules');
-fs.mkdirSync(nodeModulesDest, { recursive: true });
+console.log('Resolving dependencies...');
+const projectNodeModules = path.join(__dirname, '..', 'node_modules');
+const allDeps = resolveAllDependencies(projectNodeModules, ['express', 'cors']);
+console.log(`Found ${allDeps.length} packages to copy (including transitive dependencies)`);
 
-for (const dep of prodDeps) {
-  copyNodeModule(nodeModulesSrc, nodeModulesDest, dep);
+console.log('Copying node_modules...');
+const destNodeModules = path.join(appDir, 'node_modules');
+fs.mkdirSync(destNodeModules, { recursive: true });
+
+for (const dep of allDeps) {
+  copyNodeModule(projectNodeModules, destNodeModules, dep);
 }
 
 console.log('Renaming electron.exe to StarVault.exe...');
@@ -51,6 +54,34 @@ const size = getDirSize(APP_DIR);
 console.log(`\nBuild complete!`);
 console.log(`Output: ${APP_DIR}`);
 console.log(`Size: ${(size / 1024 / 1024).toFixed(1)} MB`);
+
+function resolveAllDependencies(nodeModulesPath, topLevelDeps) {
+  const resolved = new Set();
+  const toProcess = [...topLevelDeps];
+
+  while (toProcess.length > 0) {
+    const depName = toProcess.shift();
+    if (resolved.has(depName)) continue;
+    resolved.add(depName);
+
+    const pkgJsonPath = path.join(nodeModulesPath, depName, 'package.json');
+    if (!fs.existsSync(pkgJsonPath)) continue;
+
+    try {
+      const pkg = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf-8'));
+      const deps = pkg.dependencies || {};
+      for (const subDep of Object.keys(deps)) {
+        if (!resolved.has(subDep)) {
+          toProcess.push(subDep);
+        }
+      }
+    } catch (e) {
+      console.warn(`  Warning: Could not read package.json for ${depName}`);
+    }
+  }
+
+  return Array.from(resolved);
+}
 
 function copyDir(src, dest, exclude = []) {
   fs.mkdirSync(dest, { recursive: true });
@@ -77,14 +108,20 @@ function copyFile(src, dest) {
 function copyNodeModule(srcBase, destBase, name) {
   const src = path.join(srcBase, name);
   const dest = path.join(destBase, name);
-  if (!fs.existsSync(src)) return;
+  if (!fs.existsSync(src)) {
+    console.warn(`  Warning: ${name} not found in node_modules`);
+    return;
+  }
+  if (fs.existsSync(dest)) {
+    fs.rmSync(dest, { recursive: true });
+  }
   fs.mkdirSync(dest, { recursive: true });
   const entries = fs.readdirSync(src, { withFileTypes: true });
   for (const entry of entries) {
     const srcPath = path.join(src, entry.name);
     const destPath = path.join(dest, entry.name);
     if (entry.isDirectory()) {
-      copyNodeModule(src, dest, entry.name);
+      copyDir(srcPath, destPath);
     } else {
       fs.copyFileSync(srcPath, destPath);
     }

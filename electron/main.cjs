@@ -1,27 +1,32 @@
-const { app, BrowserWindow, shell } = require('electron');
+const { app: electronApp, BrowserWindow, shell, dialog } = require('electron');
 const path = require('path');
-const http = require('http');
 
 const SERVER_PORT = 3001;
 let mainWindow = null;
 let server = null;
 
 function startServer() {
-  return new Promise((resolve) => {
-    const express = require('express');
-    const cors = require('cors');
-    const fs = require('fs');
+  return new Promise((resolve, reject) => {
+    let express, corsModule, fs;
+    try {
+      express = require('express');
+      corsModule = require('cors');
+      fs = require('fs');
+    } catch (e) {
+      reject(new Error('缺少必要组件: ' + e.message));
+      return;
+    }
 
     const app = express();
-    app.use(cors());
+    app.use(corsModule());
     app.use(express.json({ limit: '10mb' }));
 
     const distPath = path.join(__dirname, '..', 'dist');
     app.use(express.static(distPath));
 
     function getDbPath() {
-      if (app.isPackaged) {
-        return path.join(app.getPath('userData'), 'starvault-data.json');
+      if (electronApp.isPackaged) {
+        return path.join(electronApp.getPath('userData'), 'starvault-data.json');
       }
       return path.join(__dirname, '..', 'starvault-data.json');
     }
@@ -182,32 +187,36 @@ function createWindow() {
   });
 }
 
-app.whenReady().then(async () => {
+electronApp.whenReady().then(async () => {
   try {
     await startServer();
     createWindow();
   } catch (err) {
     console.error('Failed to start:', err);
-    app.quit();
+    dialog.showErrorBox(
+      '启动失败',
+      `星穹智识无法启动。\n\n错误: ${err.message}\n\n请尝试重新解压或联系开发者。`
+    );
+    electronApp.quit();
   }
 
-  app.on('activate', () => {
+  electronApp.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
     }
   });
 });
 
-app.on('window-all-closed', () => {
+electronApp.on('window-all-closed', () => {
   if (server) {
     server.close();
   }
   if (process.platform !== 'darwin') {
-    app.quit();
+    electronApp.quit();
   }
 });
 
-app.on('before-quit', () => {
+electronApp.on('before-quit', () => {
   if (server) {
     server.close();
   }
