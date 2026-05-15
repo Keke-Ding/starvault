@@ -43,6 +43,44 @@ for (const dep of allDeps) {
   copyNodeModule(projectNodeModules, destNodeModules, dep);
 }
 
+console.log('Stripping unused files...');
+const localesDir = path.join(APP_DIR, 'locales');
+if (fs.existsSync(localesDir)) {
+  const keep = ['zh-CN.pak', 'en-US.pak'];
+  const entries = fs.readdirSync(localesDir);
+  let removed = 0;
+  for (const entry of entries) {
+    if (!keep.includes(entry)) {
+      fs.unlinkSync(path.join(localesDir, entry));
+      removed++;
+    }
+  }
+  console.log(`  Removed ${removed} unused locale files, kept ${keep.join(', ')}`);
+}
+
+function stripNodeModule(dir) {
+  if (!fs.existsSync(dir)) return;
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (['test', 'tests', '__tests__', 'example', 'examples', 'docs', 'benchmark', '.github'].includes(entry.name)) {
+        fs.rmSync(fullPath, { recursive: true });
+      } else {
+        stripNodeModule(fullPath);
+      }
+    } else {
+      const ext = path.extname(entry.name).toLowerCase();
+      if (['.md', '.ts', '.map', '.yml', '.yaml'].includes(ext) &&
+          !entry.name.endsWith('.d.ts')) {
+        fs.unlinkSync(fullPath);
+      }
+    }
+  }
+}
+console.log('  Stripping node_modules development files...');
+stripNodeModule(path.join(appDir, 'node_modules'));
+
 console.log('Renaming electron.exe to StarVault.exe...');
 const electronExe = path.join(APP_DIR, 'electron.exe');
 const starvaultExe = path.join(APP_DIR, 'StarVault.exe');

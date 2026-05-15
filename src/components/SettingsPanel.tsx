@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Upload, Trash2, Download, FileInput } from 'lucide-react'
 import { useStore } from '@/store/useStore'
@@ -24,10 +24,6 @@ export default function SettingsPanel() {
   const exportData = useStore((s) => s.exportData)
   const importData = useStore((s) => s.importData)
   const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle')
-
-  useEffect(() => {
-    document.body.style.fontFamily = settings.fontFamily
-  }, [settings.fontFamily])
 
   const handleBackgroundUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -63,23 +59,24 @@ export default function SettingsPanel() {
     URL.revokeObjectURL(url)
   }
 
-  const handleImport = () => {
+  const handleImport = useCallback(async () => {
     const input = document.createElement('input')
     input.type = 'file'
     input.accept = '.json'
-    input.onchange = (e) => {
+    input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0]
       if (!file) return
-      const reader = new FileReader()
-      reader.onload = () => {
-        const success = importData(reader.result as string)
+      try {
+        const text = await file.text()
+        const success = await importData(text)
         setImportStatus(success ? 'success' : 'error')
-        setTimeout(() => setImportStatus('idle'), 2000)
+        if (success) setTimeout(() => setImportStatus('idle'), 2000)
+      } catch {
+        setImportStatus('error')
       }
-      reader.readAsText(file)
     }
     input.click()
-  }
+  }, [importData])
 
   return (
     <AnimatePresence>

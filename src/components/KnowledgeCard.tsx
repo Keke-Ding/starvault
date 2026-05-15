@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Tag, Clock } from 'lucide-react'
 import type { KnowledgeCard as KnowledgeCardType } from '@/types'
@@ -23,7 +24,7 @@ function stripMarkdown(content: string, maxLen: number = 100): string {
     .substring(0, maxLen)
 }
 
-export default function KnowledgeCard({ card, onClick }: KnowledgeCardProps) {
+const KnowledgeCard = memo(function KnowledgeCard({ card, onClick }: KnowledgeCardProps) {
   const navigate = useNavigate()
 
   const handleClick = () => {
@@ -102,4 +103,6 @@ export default function KnowledgeCard({ card, onClick }: KnowledgeCardProps) {
       </div>
     </article>
   )
-}
+})
+
+export default KnowledgeCard

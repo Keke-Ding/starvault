@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { motion } from 'framer-motion'
+import { useShallow } from 'zustand/shallow'
 import { useStore } from '@/store/useStore'
 import Navbar from '@/components/Navbar'
 import CategoryBar from '@/components/CategoryBar'
@@ -7,10 +8,14 @@ import KnowledgeGrid from '@/components/KnowledgeGrid'
 import FloatingButton from '@/components/FloatingButton'
 
 export default function KnowledgeSquare() {
-  const cards = useStore((s) => s.cards)
-  const searchQuery = useStore((s) => s.searchQuery)
-  const activeCategory = useStore((s) => s.activeCategory)
-  const viewMode = useStore((s) => s.settings.viewMode)
+  const { cards, searchQuery, activeCategory, viewMode } = useStore(
+    useShallow((s) => ({
+      cards: s.cards,
+      searchQuery: s.searchQuery,
+      activeCategory: s.activeCategory,
+      viewMode: s.settings.viewMode,
+    }))
+  )
 
   const filteredCards = useMemo(() => {
     return cards.filter((card) => {

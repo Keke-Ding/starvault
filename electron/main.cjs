@@ -1,6 +1,10 @@
 const { app: electronApp, BrowserWindow, shell, dialog } = require('electron');
 const path = require('path');
 
+electronApp.commandLine.appendSwitch('enable-gpu-rasterization');
+electronApp.commandLine.appendSwitch('enable-zero-copy');
+electronApp.commandLine.appendSwitch('disable-software-rasterizer');
+
 const SERVER_PORT = 3001;
 let mainWindow = null;
 let server = null;
@@ -22,7 +26,7 @@ function startServer() {
     app.use(express.json({ limit: '10mb' }));
 
     const distPath = path.join(__dirname, '..', 'dist');
-    app.use(express.static(distPath));
+    app.use(express.static(distPath, { maxAge: '1d' }));
 
     function getDbPath() {
       if (electronApp.isPackaged) {
@@ -32,16 +36,27 @@ function startServer() {
     }
 
     const dbPath = getDbPath();
+    let cachedStore = null;
+    let cacheTime = 0;
+    const CACHE_TTL = 1000;
 
     function readStore() {
+      const now = Date.now();
+      if (cachedStore && (now - cacheTime) < CACHE_TTL) {
+        return cachedStore;
+      }
       try {
         if (fs.existsSync(dbPath)) {
-          return JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
+          cachedStore = JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
+          cacheTime = now;
+          return cachedStore;
         }
       } catch (e) {
         console.error('Read store error:', e.message);
       }
-      return { cards: [], settings: {} };
+      cachedStore = { cards: [], settings: {} };
+      cacheTime = now;
+      return cachedStore;
     }
 
     function writeStore(data) {
@@ -50,6 +65,8 @@ function startServer() {
         fs.mkdirSync(dir, { recursive: true });
       }
       fs.writeFileSync(dbPath, JSON.stringify(data, null, 2), 'utf-8');
+      cachedStore = data;
+      cacheTime = Date.now();
     }
 
     app.get('/api/cards', (_req, res) => {
@@ -166,6 +183,7 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      backgroundThrottling: false,
     },
   });
 

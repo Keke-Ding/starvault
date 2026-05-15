@@ -1,11 +1,13 @@
-import { motion } from 'framer-motion'
+import { memo } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import KnowledgeCard from './KnowledgeCard'
 import type { KnowledgeCard as KnowledgeCardType } from '@/types'
-import KnowledgeCard from '@/components/KnowledgeCard'
 import { cn } from '@/lib/utils'
 
 interface KnowledgeGridProps {
   cards: KnowledgeCardType[]
   viewMode: 'grid' | 'list'
+  onCardClick?: (card: KnowledgeCardType) => void
 }
 
 const containerVariants = {
@@ -30,7 +32,7 @@ const itemVariants = {
   },
 }
 
-export default function KnowledgeGrid({ cards, viewMode }: KnowledgeGridProps) {
+const KnowledgeGrid = memo(function KnowledgeGrid({ cards, viewMode, onCardClick }: KnowledgeGridProps) {
   if (cards.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-gray-500">
@@ -59,4 +61,6 @@ export default function KnowledgeGrid({ cards, viewMode }: KnowledgeGridProps) {
       ))}
     </motion.div>
   )
-}
+})
+
+export default KnowledgeGrid

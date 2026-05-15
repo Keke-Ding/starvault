@@ -117,12 +117,11 @@ export const useStore = create<AppStore>()(
       },
 
       updateSettings: (newSettings) => {
-        set((state) => ({
-          settings: { ...state.settings, ...newSettings },
-        }));
+        const state = get();
+        const updated = { ...state.settings, ...newSettings };
+        set({ settings: updated });
 
-        const updated = { ...get().settings };
-        if (get().backendReady) {
+        if (state.backendReady) {
           api
             .updateSettings({
               fontFamily: updated.fontFamily,
@@ -146,7 +145,9 @@ export const useStore = create<AppStore>()(
         if (get().backendReady) {
           try {
             return await api.exportData();
-          } catch {}
+          } catch {
+            // fallback to local data
+          }
         }
         const state = get();
         return JSON.stringify(
@@ -163,13 +164,13 @@ export const useStore = create<AppStore>()(
 
           if (get().backendReady) {
             await api.importData(data);
-            const [cards, settings] = await Promise.all([
+            const [cards] = await Promise.all([
               api.getCards(),
-              api.getSettings(),
             ]);
-            const mergedSettings = { ...defaultSettings, ...get().settings };
-            if (settings.fontFamily) mergedSettings.fontFamily = settings.fontFamily;
-            if (settings.themeId) mergedSettings.themeId = settings.themeId;
+            const mergedSettings: UserSettings = {
+              ...defaultSettings,
+              ...data.settings,
+            };
             set({ cards, settings: mergedSettings });
           } else {
             set({
