@@ -1,0 +1,10 @@
+{
+  "name": "starvault",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "server-dist/index.js",
+  "dependencies": {
+    "express": "*",
+    "cors": "*"
+  }
+}
