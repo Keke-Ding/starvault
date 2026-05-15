@@ -3,20 +3,52 @@
   "private": true,
   "version": "1.0.0",
   "description": "星穹智识 - 二次元风格知识管理工具",
+  "main": "electron/main.cjs",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "dev:server": "tsx server/index.ts",
     "dev:full": "concurrently \"npm run dev:server\" \"npm run dev\"",
+    "dev:electron": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && electron .\"",
     "build": "tsc -b && vite build",
     "build:server": "tsc -p server/tsconfig.json",
     "build:full": "npm run build && npm run build:server",
+    "build:electron": "npm run build && electron-builder --win",
     "lint": "eslint .",
     "preview": "vite preview",
     "check": "tsc -b --noEmit",
     "start": "node server/index.js",
-    "package": "npm run build:full && node scripts/package.js",
-    "package:portable": "npm run build:full && node scripts/package-portable.js"
+    "package": "npm run build:full && node scripts/package.js"
+  },
+  "build": {
+    "appId": "com.starvault.app",
+    "productName": "星穹智识 StarVault",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "electron/**/*",
+      "dist/**/*",
+      "package.json"
+    ],
+    "extraResources": [],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "星穹智识 StarVault"
+    }
   },
   "dependencies": {
     "clsx": "^2.1.1",
@@ -43,6 +75,9 @@
     "autoprefixer": "^10.4.21",
     "babel-plugin-react-dev-locator": "^1.0.0",
     "concurrently": "^9.1.0",
+    "electron": "^33.4.0",
+    "electron-builder": "^26.8.1",
+    "electron-packager": "^17.1.2",
     "esbuild": "^0.28.0",
     "eslint": "^9.25.0",
     "eslint-plugin-react-hooks": "^5.2.0",
