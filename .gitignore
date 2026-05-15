@@ -1,5 +1,7 @@
 node_modules
 dist
+bundle
+release
 .env
 .env.local
 *.log
