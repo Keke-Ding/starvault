@@ -25,6 +25,7 @@ interface AppStore {
 const defaultSettings: UserSettings = {
   backgroundImage: null,
   backgroundOpacity: 0.85,
+  customBgColor: null,
   fontFamily: "'Noto Sans SC', sans-serif",
   themeId: 'starnight',
   viewMode: 'grid',

@@ -1,145 +1,152 @@
-import { useRef, useCallback, useEffect } from 'react'
-import { X, Upload, Trash2 } from 'lucide-react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { X, Upload, Trash2, Download, FileInput } from 'lucide-react'
 import { useStore } from '@/store/useStore'
-import { THEME_PRESETS, FONT_PRESETS } from '@/types'
+import { FONT_PRESETS, THEME_PRESETS } from '@/types'
 import { cn } from '@/lib/utils'
 
-const PRESET_BG_COLORS = [
-  { name: '深空', value: '#0f0f1a' },
-  { name: '星云紫', value: '#1a0a2e' },
-  { name: '暗夜蓝', value: '#0a1628' },
-  { name: '墨绿', value: '#0a1a0f' },
-  { name: '暖橙', value: '#1a0f0a' },
-  { name: '樱花粉', value: '#1a0a1a' },
-  { name: '石墨', value: '#1a1a1a' },
-  { name: '极光', value: '#0a1a1a' },
+const PRESET_COLORS = [
+  { label: '紫黑', value: '#0f0f1a' },
+  { label: '樱紫', value: '#1a0a1a' },
+  { label: '墨绿', value: '#0a1a0f' },
+  { label: '棕橙', value: '#1a0f0a' },
+  { label: '深蓝', value: '#0a0a2e' },
+  { label: '暗红', value: '#1a0a0a' },
+  { label: '纯黑', value: '#050508' },
+  { label: '深灰', value: '#12121f' },
 ]
 
 export default function SettingsPanel() {
+  const isOpen = useStore((s) => s.isSettingsOpen)
   const settings = useStore((s) => s.settings)
-  const isSettingsOpen = useStore((s) => s.isSettingsOpen)
-  const updateSettings = useStore((s) => s.updateSettings)
   const closeSettings = useStore((s) => s.closeSettings)
-
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const updateSettings = useStore((s) => s.updateSettings)
+  const exportData = useStore((s) => s.exportData)
+  const importData = useStore((s) => s.importData)
+  const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle')
 
   useEffect(() => {
     document.body.style.fontFamily = settings.fontFamily
   }, [settings.fontFamily])
 
-  const handleImageUpload = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0]
-      if (!file) return
+  const handleBackgroundUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 2 * 1024 * 1024) {
+      alert('图片大小不能超过 2MB')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => {
+      updateSettings({ backgroundImage: reader.result as string })
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
 
+  const handleClearBackground = () => {
+    updateSettings({ backgroundImage: null })
+  }
+
+  const handlePresetColor = (color: string) => {
+    updateSettings({ customBgColor: color, backgroundImage: null })
+  }
+
+  const handleExport = () => {
+    const json = exportData()
+    const blob = new Blob([json], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `starvault-backup-${new Date().toISOString().slice(0, 10)}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleImport = () => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = '.json'
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0]
+      if (!file) return
       const reader = new FileReader()
       reader.onload = () => {
-        updateSettings({ backgroundImage: reader.result as string })
+        const success = importData(reader.result as string)
+        setImportStatus(success ? 'success' : 'error')
+        setTimeout(() => setImportStatus('idle'), 2000)
       }
-      reader.readAsDataURL(file)
-
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
-      }
-    },
-    [updateSettings]
-  )
-
-  const handleClearBackground = useCallback(() => {
-    updateSettings({ backgroundImage: null })
-  }, [updateSettings])
+      reader.readAsText(file)
+    }
+    input.click()
+  }
 
   return (
     <AnimatePresence>
-      {isSettingsOpen && (
+      {isOpen && (
         <>
           <motion.div
-            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
             onClick={closeSettings}
           />
 
-          <motion.div
-            className="fixed right-0 top-0 z-50 h-full w-80 overflow-y-auto"
-            style={{
-              background: 'rgba(15, 15, 26, 0.95)',
-              backdropFilter: 'blur(24px)',
-              WebkitBackdropFilter: 'blur(24px)',
-              borderLeft: '1px solid rgba(0, 240, 255, 0.15)',
-              boxShadow: '-8px 0 32px rgba(0, 0, 0, 0.5)',
-            }}
+          <motion.aside
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 26, stiffness: 300 }}
+            className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-md overflow-y-auto"
           >
-            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
-              <h2 className="text-lg font-bold neon-text-cyan tracking-wider">
-                设置
-              </h2>
-              <button
-                onClick={closeSettings}
-                className="rounded-lg p-1.5 text-gray-400 hover:text-cyan-400 hover:bg-white/5 transition-colors"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
+            <div className="min-h-full glass-panel border-l border-neon-cyan/10 p-6">
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-xl font-bold neon-text-cyan">设置</h2>
+                <button
+                  onClick={closeSettings}
+                  className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-400" />
+                </button>
+              </div>
 
-            <div className="px-5 py-4 space-y-6">
-              <section>
-                <h3 className="text-sm font-semibold text-cyan-400 mb-3 tracking-wide">
+              <section className="mb-8">
+                <h3 className="text-sm font-semibold text-neon-cyan uppercase tracking-wider mb-4">
                   背景设置
                 </h3>
 
-                <div className="flex gap-2 mb-3">
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className={cn(
-                      'flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors',
-                      'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20',
-                      'hover:bg-cyan-500/20 hover:border-cyan-500/40'
-                    )}
-                  >
-                    <Upload className="h-3.5 w-3.5" />
-                    上传背景图
-                  </button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
+                <div className="flex gap-2 mb-4">
+                  <label className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 hover:border-neon-cyan/40 cursor-pointer transition-colors text-sm">
+                    <Upload className="w-4 h-4" />
+                    上传背景图片
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleBackgroundUpload}
+                      className="hidden"
+                    />
+                  </label>
                   {settings.backgroundImage && (
                     <button
                       onClick={handleClearBackground}
-                      className={cn(
-                        'flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors',
-                        'bg-red-500/10 text-red-400 border border-red-500/20',
-                        'hover:bg-red-500/20 hover:border-red-500/40'
-                      )}
+                      className="px-4 py-2.5 rounded-lg bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition-colors text-sm text-red-400 flex items-center gap-2"
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      清除背景
+                      <Trash2 className="w-4 h-4" />
+                      清除
                     </button>
                   )}
                 </div>
 
-                <div className="mb-3">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs text-gray-400">透明度</span>
-                    <span className="text-xs text-cyan-400 tabular-nums">
-                      {Math.round(settings.backgroundOpacity * 100)}%
-                    </span>
-                  </div>
+                <div className="mb-4">
+                  <label className="text-xs text-gray-400 mb-2 block">
+                    背景透明度: {Math.round(settings.backgroundOpacity * 100)}%
+                  </label>
                   <input
                     type="range"
                     min="0.3"
                     max="1"
-                    step="0.01"
+                    step="0.05"
                     value={settings.backgroundOpacity}
                     onChange={(e) =>
                       updateSettings({
@@ -148,36 +155,36 @@ export default function SettingsPanel() {
                     }
                     className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
                     style={{
-                      background: `linear-gradient(to right, rgba(0,240,255,0.3), rgba(0,240,255,1) ${((settings.backgroundOpacity - 0.3) / 0.7) * 100}%, rgba(255,255,255,0.1) ${((settings.backgroundOpacity - 0.3) / 0.7) * 100}%)`,
-                      accentColor: '#00f0ff',
+                      background: `linear-gradient(to right, #00f0ff ${(settings.backgroundOpacity - 0.3) * 143}%, rgba(255,255,255,0.1) ${(settings.backgroundOpacity - 0.3) * 143}%)`,
                     }}
                   />
                 </div>
 
                 <div>
-                  <span className="text-xs text-gray-400 block mb-2">
+                  <label className="text-xs text-gray-400 mb-2 block">
                     预设背景色
-                  </span>
+                  </label>
                   <div className="flex flex-wrap gap-2">
-                    {PRESET_BG_COLORS.map((color) => (
+                    {PRESET_COLORS.map((pc) => (
                       <button
-                        key={color.value}
-                        onClick={() => {
-                          updateSettings({ backgroundImage: null })
-                        }}
-                        className="w-7 h-7 rounded-full border-2 border-white/15 transition-all hover:scale-110 hover:border-cyan-400/50"
-                        style={{
-                          backgroundColor: color.value,
-                        }}
-                        title={color.name}
+                        key={pc.value}
+                        onClick={() => handlePresetColor(pc.value)}
+                        className={cn(
+                          'w-9 h-9 rounded-lg border-2 transition-all hover:scale-110',
+                          settings.customBgColor === pc.value
+                            ? 'border-neon-cyan shadow-[0_0_10px_rgba(0,240,255,0.4)]'
+                            : 'border-white/10'
+                        )}
+                        style={{ backgroundColor: pc.value }}
+                        title={pc.label}
                       />
                     ))}
                   </div>
                 </div>
               </section>
 
-              <section>
-                <h3 className="text-sm font-semibold text-cyan-400 mb-3 tracking-wide">
+              <section className="mb-8">
+                <h3 className="text-sm font-semibold text-neon-cyan uppercase tracking-wider mb-4">
                   字体设置
                 </h3>
                 <div className="space-y-2">
@@ -186,29 +193,28 @@ export default function SettingsPanel() {
                       key={font.id}
                       onClick={() => updateSettings({ fontFamily: font.cssFamily })}
                       className={cn(
-                        'w-full rounded-lg p-3 text-left transition-all',
-                        'bg-white/5 border',
+                        'w-full text-left p-3 rounded-lg border transition-all',
                         settings.fontFamily === font.cssFamily
-                          ? 'neon-border'
-                          : 'border-white/5 hover:border-white/15 hover:bg-white/8'
+                          ? 'neon-border bg-neon-cyan/5'
+                          : 'border-white/5 hover:border-white/15 bg-white/[0.02]'
                       )}
                     >
-                      <p
-                        className="text-sm font-medium text-gray-200"
+                      <span
+                        className="block text-sm font-medium mb-0.5"
                         style={{ fontFamily: font.cssFamily }}
                       >
                         {font.name}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-0.5">
+                      </span>
+                      <span className="block text-xs text-gray-500">
                         {font.description}
-                      </p>
+                      </span>
                     </button>
                   ))}
                 </div>
               </section>
 
-              <section>
-                <h3 className="text-sm font-semibold text-cyan-400 mb-3 tracking-wide">
+              <section className="mb-8">
+                <h3 className="text-sm font-semibold text-neon-cyan uppercase tracking-wider mb-4">
                   主题配色
                 </h3>
                 <div className="grid grid-cols-2 gap-2">
@@ -217,39 +223,64 @@ export default function SettingsPanel() {
                       key={theme.id}
                       onClick={() => updateSettings({ themeId: theme.id })}
                       className={cn(
-                        'rounded-lg p-3 transition-all',
-                        'border',
+                        'p-3 rounded-lg border transition-all text-left',
                         settings.themeId === theme.id
-                          ? 'neon-border bg-white/10'
-                          : 'border-white/5 bg-white/5 hover:border-white/15 hover:bg-white/8'
+                          ? 'neon-border bg-neon-cyan/5'
+                          : 'border-white/5 hover:border-white/15 bg-white/[0.02]'
                       )}
                     >
                       <div className="flex gap-1.5 mb-2">
-                        <div
-                          className="w-5 h-5 rounded-full"
+                        <span
+                          className="w-4 h-4 rounded-full"
                           style={{ backgroundColor: theme.bgColor }}
                         />
-                        <div
-                          className="w-5 h-5 rounded-full"
+                        <span
+                          className="w-4 h-4 rounded-full"
                           style={{ backgroundColor: theme.accentColor }}
                         />
-                        <div
-                          className="w-5 h-5 rounded-full"
+                        <span
+                          className="w-4 h-4 rounded-full"
                           style={{ backgroundColor: theme.secondaryColor }}
                         />
                       </div>
-                      <p className="text-xs font-medium text-gray-200">
-                        {theme.name}
-                      </p>
-                      <p className="text-[10px] text-gray-500 mt-0.5 leading-tight">
+                      <span className="block text-xs font-medium">{theme.name}</span>
+                      <span className="block text-[10px] text-gray-500 mt-0.5">
                         {theme.description}
-                      </p>
+                      </span>
                     </button>
                   ))}
                 </div>
               </section>
+
+              <section>
+                <h3 className="text-sm font-semibold text-neon-cyan uppercase tracking-wider mb-4">
+                  数据管理
+                </h3>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleExport}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-neon-cyan/10 border border-neon-cyan/20 hover:bg-neon-cyan/20 transition-colors text-sm text-neon-cyan"
+                  >
+                    <Download className="w-4 h-4" />
+                    导出数据
+                  </button>
+                  <button
+                    onClick={handleImport}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-neon-magenta/10 border border-neon-magenta/20 hover:bg-neon-magenta/20 transition-colors text-sm text-neon-magenta"
+                  >
+                    <FileInput className="w-4 h-4" />
+                    导入数据
+                  </button>
+                </div>
+                {importStatus === 'success' && (
+                  <p className="text-xs text-green-400 mt-2">数据导入成功</p>
+                )}
+                {importStatus === 'error' && (
+                  <p className="text-xs text-red-400 mt-2">导入失败，请检查文件格式</p>
+                )}
+              </section>
             </div>
-          </motion.div>
+          </motion.aside>
         </>
       )}
     </AnimatePresence>

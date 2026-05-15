@@ -14,6 +14,7 @@ interface ParticleBackgroundProps {
   themeId?: string
   backgroundImage?: string | null
   backgroundOpacity?: number
+  customBgColor?: string | null
 }
 
 const PARTICLE_COLORS = ['#00f0ff', '#ff2d95', '#00f0ff88', '#ff2d9588']
@@ -24,6 +25,7 @@ export default function ParticleBackground({
   themeId = 'starnight',
   backgroundImage,
   backgroundOpacity = 0.3,
+  customBgColor,
 }: ParticleBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const particlesRef = useRef<Particle[]>([])
@@ -131,7 +133,7 @@ export default function ParticleBackground({
     <div className="fixed inset-0 -z-10">
       <div
         className="absolute inset-0"
-        style={{ backgroundColor: theme.bgColor }}
+        style={{ backgroundColor: customBgColor || theme.bgColor }}
       />
       {backgroundImage && (
         <div

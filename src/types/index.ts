@@ -11,6 +11,7 @@ export interface KnowledgeCard {
 export interface UserSettings {
   backgroundImage: string | null;
   backgroundOpacity: number;
+  customBgColor: string | null;
   fontFamily: string;
   themeId: string;
   viewMode: 'grid' | 'list';
