@@ -47,7 +47,7 @@ export default function KnowledgeSquare() {
       </div>
 
       <main className="px-6 pb-24 pt-4">
-        <KnowledgeGrid cards={filteredCards} viewMode={viewMode} />
+        <KnowledgeGrid cards={filteredCards} viewMode={viewMode} hasAnyCards={cards.length > 0} />
       </main>
 
       <FloatingButton />

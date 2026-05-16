@@ -9,8 +9,9 @@ export default function FloatingButton() {
   return (
     <motion.button
       onClick={() => navigate('/editor')}
-      whileHover={{ rotate: 360 }}
-      transition={{ duration: 0.8, ease: 'easeInOut' }}
+      whileHover={{ scale: 1.1 }}
+      whileTap={{ scale: 0.9 }}
+      transition={{ duration: 0.2 }}
       className={cn(
         'fixed bottom-8 right-8 z-50',
         'clip-diamond',

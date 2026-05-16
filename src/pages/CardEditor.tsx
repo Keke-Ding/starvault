@@ -76,7 +76,7 @@ export default function CardEditor() {
         </h1>
 
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/')}
           className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-gray-400 hover:text-neon-cyan hover:bg-white/5 transition-colors"
         >
           <X className="w-4 h-4" />

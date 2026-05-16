@@ -8,7 +8,7 @@ declare global {
       maximize: () => void
       close: () => void
       isMaximized: () => Promise<boolean>
-      onMaximizeChange: (cb: (maximized: boolean) => void) => void
+      onMaximizeChange: (cb: (maximized: boolean) => void) => () => void
     }
   }
 }
@@ -20,7 +20,10 @@ export default function TitleBar() {
   useEffect(() => {
     if (!api) return
     api.isMaximized().then(setMaximized)
-    api.onMaximizeChange(setMaximized)
+    const unsubscribe = api.onMaximizeChange(setMaximized)
+    return () => {
+      if (unsubscribe) unsubscribe()
+    }
   }, [api])
 
   if (!api) return null

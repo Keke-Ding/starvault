@@ -14,11 +14,23 @@ interface SoundContextType {
   playToggleOff: () => void;
 }
 
-const SoundContext = createContext<SoundContextType | null>(null);
+const noop = () => {};
+
+const SoundContext = createContext<SoundContextType>({
+  playHover: noop,
+  playClick: noop,
+  playCreate: noop,
+  playDelete: noop,
+  playOpen: noop,
+  playClose: noop,
+  playNotification: noop,
+  playTransition: noop,
+  playToggleOn: noop,
+  playToggleOff: noop,
+});
 
 export function useAppSound() {
-  const ctx = useContext(SoundContext);
-  return ctx || ({} as SoundContextType);
+  return useContext(SoundContext);
 }
 
 export default function SoundProvider({ children }: { children: ReactNode }) {

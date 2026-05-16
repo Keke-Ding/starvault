@@ -27,6 +27,10 @@ export default function Navbar() {
     return () => clearTimeout(debounceRef.current)
   }, [])
 
+  useEffect(() => {
+    setLocalSearch(searchQuery)
+  }, [searchQuery])
+
   const handleViewToggle = () => {
     updateSettings({ viewMode: viewMode === 'grid' ? 'list' : 'grid' })
   }

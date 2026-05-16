@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import KnowledgeCard from './KnowledgeCard'
 import type { KnowledgeCard as KnowledgeCardType } from '@/types'
 import { cn } from '@/lib/utils'
@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 interface KnowledgeGridProps {
   cards: KnowledgeCardType[]
   viewMode: 'grid' | 'list'
+  hasAnyCards: boolean
   onCardClick?: (card: KnowledgeCardType) => void
 }
 
@@ -32,13 +33,15 @@ const itemVariants = {
   },
 }
 
-const KnowledgeGrid = memo(function KnowledgeGrid({ cards, viewMode, onCardClick }: KnowledgeGridProps) {
+const KnowledgeGrid = memo(function KnowledgeGrid({ cards, viewMode, hasAnyCards, onCardClick }: KnowledgeGridProps) {
   if (cards.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-gray-500">
         <div className="text-6xl mb-4 opacity-30">✦</div>
-        <p className="text-lg">暂无知识卡片</p>
-        <p className="text-sm mt-1 opacity-60">点击右下角按钮创建你的第一张卡片</p>
+        <p className="text-lg">{hasAnyCards ? '没有匹配的卡片' : '暂无知识卡片'}</p>
+        <p className="text-sm mt-1 opacity-60">
+          {hasAnyCards ? '尝试调整筛选条件或搜索关键词' : '点击右下角按钮创建你的第一张卡片'}
+        </p>
       </div>
     )
   }
