@@ -21,6 +21,7 @@ copyDir(electronDist, APP_DIR, ['resources']);
 console.log('Copying app files...');
 copyDir(path.join(__dirname, '..', 'dist'), path.join(appDir, 'dist'));
 copyFile(path.join(__dirname, '..', 'electron', 'main.cjs'), path.join(appDir, 'electron', 'main.cjs'));
+copyFile(path.join(__dirname, '..', 'electron', 'preload.cjs'), path.join(appDir, 'electron', 'preload.cjs'));
 
 const simplePkg = {
   name: 'starvault',

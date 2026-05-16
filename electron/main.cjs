@@ -1,4 +1,4 @@
-const { app: electronApp, BrowserWindow, shell, dialog, screen } = require('electron');
+const { app: electronApp, BrowserWindow, shell, dialog, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -52,6 +52,29 @@ function saveWindowState() {
   } catch (e) {
     // ignore
   }
+}
+
+function setupIPC() {
+  ipcMain.on('window-minimize', () => {
+    if (mainWindow) mainWindow.minimize();
+  });
+
+  ipcMain.on('window-maximize', () => {
+    if (!mainWindow) return;
+    if (mainWindow.isMaximized()) {
+      mainWindow.unmaximize();
+    } else {
+      mainWindow.maximize();
+    }
+  });
+
+  ipcMain.on('window-close', () => {
+    if (mainWindow) mainWindow.close();
+  });
+
+  ipcMain.handle('window-is-maximized', () => {
+    return mainWindow ? mainWindow.isMaximized() : false;
+  });
 }
 
 function startServer() {
@@ -215,6 +238,8 @@ function startServer() {
 
 function createWindow() {
   const savedState = loadWindowState();
+  const preloadPath = path.join(__dirname, 'preload.cjs');
+
   const windowOptions = {
     width: DEFAULT_WIDTH,
     height: DEFAULT_HEIGHT,
@@ -223,10 +248,11 @@ function createWindow() {
     title: '星穹智识 StarVault',
     backgroundColor: '#0a0a1a',
     show: false,
-    frame: true,
+    frame: false,
     autoHideMenuBar: true,
     center: true,
     webPreferences: {
+      preload: preloadPath,
       nodeIntegration: false,
       contextIsolation: true,
       backgroundThrottling: false,
@@ -246,6 +272,13 @@ function createWindow() {
   if (savedState && savedState.isMaximized) {
     mainWindow.maximize();
   }
+
+  mainWindow.on('maximize', () => {
+    mainWindow.webContents.send('window-maximize-change', true);
+  });
+  mainWindow.on('unmaximize', () => {
+    mainWindow.webContents.send('window-maximize-change', false);
+  });
 
   mainWindow.loadURL(`http://localhost:${SERVER_PORT}`);
 
@@ -280,6 +313,7 @@ function createWindow() {
 
 electronApp.whenReady().then(async () => {
   try {
+    setupIPC();
     await startServer();
     createWindow();
   } catch (err) {

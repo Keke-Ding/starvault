@@ -4,6 +4,7 @@ import { useStore } from '@/store/useStore';
 import ParticleBackground from '@/components/ParticleBackground';
 import SettingsPanel from '@/components/SettingsPanel';
 import SoundProvider from '@/components/SoundProvider';
+import TitleBar from '@/components/TitleBar';
 import KnowledgeSquare from '@/pages/KnowledgeSquare';
 
 const KnowledgeDetail = lazy(() => import('@/pages/KnowledgeDetail'));
@@ -29,26 +30,29 @@ function App() {
     <BrowserRouter>
       <SoundProvider>
         <div
-          className="relative min-h-screen"
+          className="relative min-h-screen flex flex-col"
           style={{ fontFamily: settings.fontFamily }}
         >
-          <ParticleBackground
-            themeId={settings.themeId}
-            backgroundImage={settings.backgroundImage}
-            backgroundOpacity={settings.backgroundOpacity}
-            customBgColor={settings.customBgColor}
-          />
+          <TitleBar />
+          <div className="relative flex-1">
+            <ParticleBackground
+              themeId={settings.themeId}
+              backgroundImage={settings.backgroundImage}
+              backgroundOpacity={settings.backgroundOpacity}
+              customBgColor={settings.customBgColor}
+            />
 
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              <Route path="/" element={<KnowledgeSquare />} />
-              <Route path="/detail/:id" element={<KnowledgeDetail />} />
-              <Route path="/editor" element={<CardEditor />} />
-              <Route path="/editor/:id" element={<CardEditor />} />
-            </Routes>
-          </Suspense>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                <Route path="/" element={<KnowledgeSquare />} />
+                <Route path="/detail/:id" element={<KnowledgeDetail />} />
+                <Route path="/editor" element={<CardEditor />} />
+                <Route path="/editor/:id" element={<CardEditor />} />
+              </Routes>
+            </Suspense>
 
-          <SettingsPanel />
+            <SettingsPanel />
+          </div>
         </div>
       </SoundProvider>
     </BrowserRouter>
