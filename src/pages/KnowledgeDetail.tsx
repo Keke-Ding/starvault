@@ -57,16 +57,16 @@ export default function KnowledgeDetail() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="min-h-screen py-6 px-4"
+      className="min-h-screen py-4 sm:py-6 px-3 sm:px-4"
     >
       <div className="max-w-3xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
           <button
             onClick={() => navigate('/')}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors shrink-0"
           >
             <ArrowLeft className="w-4 h-4" />
-            返回
+            <span className="hidden sm:inline">返回</span>
           </button>
 
           <div className="flex items-center gap-2">
@@ -75,14 +75,14 @@ export default function KnowledgeDetail() {
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-neon-cyan/10 border border-neon-cyan/20 text-neon-cyan hover:bg-neon-cyan/20 transition-colors text-sm"
             >
               <Pencil className="w-4 h-4" />
-              编辑
+              <span className="hidden sm:inline">编辑</span>
             </button>
             <button
               onClick={() => setShowDeleteConfirm(true)}
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors text-sm"
             >
               <Trash2 className="w-4 h-4" />
-              删除
+              <span className="hidden sm:inline">删除</span>
             </button>
           </div>
         </div>

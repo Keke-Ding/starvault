@@ -28,13 +28,16 @@ export default function TitleBar() {
 
   if (!api) return null
 
+  const btnBase =
+    'w-12 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors'
+
   return (
     <div
-      className="flex items-center justify-between h-8 px-3 select-none shrink-0"
+      className="flex items-center justify-between h-9 px-2 select-none shrink-0"
       style={{ background: '#0a0a1a', WebkitAppRegion: 'drag' } as React.CSSProperties}
     >
       <span
-        className="text-xs text-gray-500 font-medium tracking-wider pl-2"
+        className="text-xs text-gray-500 font-medium tracking-wider pl-3"
         style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
       >
         星穹智识 StarVault
@@ -45,24 +48,24 @@ export default function TitleBar() {
       >
         <button
           onClick={() => api.minimize()}
-          className="w-8 h-6 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 rounded transition-colors"
+          className={btnBase + ' hover:bg-white/10'}
           title="最小化"
         >
-          <Minus className="w-3 h-3" />
+          <Minus className="w-4 h-4" />
         </button>
         <button
           onClick={() => api.maximize()}
-          className="w-8 h-6 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 rounded transition-colors"
+          className={btnBase + ' hover:bg-white/10'}
           title={maximized ? '还原' : '最大化'}
         >
-          <Square className="w-3 h-3" />
+          <Square className="w-3.5 h-3.5" />
         </button>
         <button
           onClick={() => api.close()}
-          className="w-8 h-6 flex items-center justify-center text-gray-500 hover:text-white hover:bg-red-500/60 rounded transition-colors"
+          className={btnBase + ' hover:bg-red-500/80'}
           title="关闭"
         >
-          <X className="w-3.5 h-3.5" />
+          <X className="w-4 h-4" />
         </button>
       </div>
     </div>

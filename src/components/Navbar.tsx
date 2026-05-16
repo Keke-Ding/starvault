@@ -37,7 +37,7 @@ export default function Navbar() {
 
   return (
     <nav
-      className="sticky top-0 z-50 flex items-center justify-between px-6 py-3"
+      className="sticky top-0 z-50 flex items-center justify-between px-3 sm:px-6 py-2.5 sm:py-3 gap-3"
       style={{
         background: 'rgba(15, 15, 26, 0.75)',
         backdropFilter: 'blur(16px)',
@@ -47,12 +47,12 @@ export default function Navbar() {
       }}
     >
       <div className="flex items-center gap-2 shrink-0">
-        <h1 className="neon-text-cyan text-xl font-bold tracking-wider select-none">
+        <h1 className="neon-text-cyan text-lg sm:text-xl font-bold tracking-wider select-none">
           星穹智识
         </h1>
       </div>
 
-      <div className="relative flex-1 max-w-md mx-8">
+      <div className="relative flex-1 max-w-xs sm:max-w-sm lg:max-w-md mx-2 sm:mx-8">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-cyan-400/60 pointer-events-none" />
         <input
           type="text"

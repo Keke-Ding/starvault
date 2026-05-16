@@ -42,13 +42,12 @@ export default function KnowledgeSquare() {
     >
       <Navbar />
 
-      <div className="px-6">
+      <div className="px-3 sm:px-6 lg:px-8 max-w-[1800px] mx-auto w-full">
         <CategoryBar />
+        <main className="py-4 sm:py-6">
+          <KnowledgeGrid cards={filteredCards} viewMode={viewMode} hasAnyCards={cards.length > 0} />
+        </main>
       </div>
-
-      <main className="px-6 pb-24 pt-4">
-        <KnowledgeGrid cards={filteredCards} viewMode={viewMode} hasAnyCards={cards.length > 0} />
-      </main>
 
       <FloatingButton />
     </motion.div>

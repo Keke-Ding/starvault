@@ -68,7 +68,7 @@ export default function CardEditor() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: 'easeOut' }}
-      className="min-h-screen px-6 py-8 max-w-4xl mx-auto"
+      className="min-h-screen px-4 sm:px-6 py-6 sm:py-8 max-w-4xl mx-auto"
     >
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-2xl font-bold neon-text-cyan text-neon-cyan">
@@ -84,7 +84,7 @@ export default function CardEditor() {
         </button>
       </div>
 
-      <div className="glass-panel rounded-xl p-8">
+      <div className="glass-panel rounded-xl p-4 sm:p-6 lg:p-8">
         <div className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-2">
