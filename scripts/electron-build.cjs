@@ -3,8 +3,37 @@ const path = require('path');
 
 const RELEASE_DIR = path.join(__dirname, '..', 'release');
 const APP_DIR = path.join(RELEASE_DIR, 'StarVault');
+const PROJECT_ROOT = path.join(__dirname, '..');
 
 console.log('Building Electron desktop app...\n');
+
+const distPath = path.join(PROJECT_ROOT, 'dist');
+const electronMainPath = path.join(PROJECT_ROOT, 'electron', 'main.cjs');
+const electronPreloadPath = path.join(PROJECT_ROOT, 'electron', 'preload.cjs');
+const electronDistPath = path.join(PROJECT_ROOT, 'node_modules', 'electron', 'dist');
+
+console.log('Pre-build checks...');
+const checks = [
+  { label: 'dist/', path: distPath },
+  { label: 'electron/main.cjs', path: electronMainPath },
+  { label: 'electron/preload.cjs', path: electronPreloadPath },
+  { label: 'node_modules/electron/dist/', path: electronDistPath },
+];
+for (const check of checks) {
+  if (!fs.existsSync(check.path)) {
+    console.error(`ERROR: ${check.label} not found at ${check.path}`);
+    console.error('Please run "npm run build" first to generate the dist folder.');
+    process.exit(1);
+  }
+  console.log(`  OK: ${check.label}`);
+}
+
+const distIndexHtml = path.join(distPath, 'index.html');
+if (!fs.existsSync(distIndexHtml)) {
+  console.error('ERROR: dist/index.html not found. The Vite build may have failed.');
+  process.exit(1);
+}
+console.log('  OK: dist/index.html exists\n');
 
 if (fs.existsSync(APP_DIR)) {
   fs.rmSync(APP_DIR, { recursive: true });
@@ -14,14 +43,13 @@ const resourcesDir = path.join(APP_DIR, 'resources');
 const appDir = path.join(resourcesDir, 'app');
 fs.mkdirSync(appDir, { recursive: true });
 
-const electronDist = path.join(__dirname, '..', 'node_modules', 'electron', 'dist');
 console.log('Copying Electron runtime...');
-copyDir(electronDist, APP_DIR, ['resources']);
+copyDir(electronDistPath, APP_DIR, ['resources']);
 
 console.log('Copying app files...');
-copyDir(path.join(__dirname, '..', 'dist'), path.join(appDir, 'dist'));
-copyFile(path.join(__dirname, '..', 'electron', 'main.cjs'), path.join(appDir, 'electron', 'main.cjs'));
-copyFile(path.join(__dirname, '..', 'electron', 'preload.cjs'), path.join(appDir, 'electron', 'preload.cjs'));
+copyDir(distPath, path.join(appDir, 'dist'));
+copyFile(electronMainPath, path.join(appDir, 'electron', 'main.cjs'));
+copyFile(electronPreloadPath, path.join(appDir, 'electron', 'preload.cjs'));
 
 const simplePkg = {
   name: 'starvault',
@@ -32,7 +60,7 @@ const simplePkg = {
 fs.writeFileSync(path.join(appDir, 'package.json'), JSON.stringify(simplePkg, null, 2));
 
 console.log('Resolving dependencies...');
-const projectNodeModules = path.join(__dirname, '..', 'node_modules');
+const projectNodeModules = path.join(PROJECT_ROOT, 'node_modules');
 const allDeps = resolveAllDependencies(projectNodeModules, ['express', 'cors']);
 console.log(`Found ${allDeps.length} packages to copy (including transitive dependencies)`);
 
@@ -89,10 +117,42 @@ if (fs.existsSync(electronExe)) {
   fs.renameSync(electronExe, starvaultExe);
 }
 
+console.log('\nPost-build verification...');
+const verifyChecks = [
+  { label: 'StarVault.exe', path: starvaultExe },
+  { label: 'resources/app/dist/index.html', path: path.join(appDir, 'dist', 'index.html') },
+  { label: 'resources/app/electron/main.cjs', path: path.join(appDir, 'electron', 'main.cjs') },
+  { label: 'resources/app/electron/preload.cjs', path: path.join(appDir, 'electron', 'preload.cjs') },
+  { label: 'resources/app/node_modules/express', path: path.join(appDir, 'node_modules', 'express') },
+  { label: 'resources/app/node_modules/cors', path: path.join(appDir, 'node_modules', 'cors') },
+];
+let allOk = true;
+for (const check of verifyChecks) {
+  if (fs.existsSync(check.path)) {
+    console.log(`  OK: ${check.label}`);
+  } else {
+    console.error(`  MISSING: ${check.label}`);
+    allOk = false;
+  }
+}
+
+const distAssetsDir = path.join(appDir, 'dist', 'assets');
+if (fs.existsSync(distAssetsDir)) {
+  const assetCount = fs.readdirSync(distAssetsDir).length;
+  console.log(`  OK: dist/assets/ contains ${assetCount} files`);
+} else {
+  console.error('  MISSING: dist/assets/ directory');
+  allOk = false;
+}
+
 const size = getDirSize(APP_DIR);
-console.log(`\nBuild complete!`);
+console.log(`\nBuild ${allOk ? 'complete' : 'FAILED - some files are missing'}!`);
 console.log(`Output: ${APP_DIR}`);
 console.log(`Size: ${(size / 1024 / 1024).toFixed(1)} MB`);
+
+if (!allOk) {
+  process.exit(1);
+}
 
 function resolveAllDependencies(nodeModulesPath, topLevelDeps) {
   const resolved = new Set();
@@ -123,6 +183,10 @@ function resolveAllDependencies(nodeModulesPath, topLevelDeps) {
 }
 
 function copyDir(src, dest, exclude = []) {
+  if (!fs.existsSync(src)) {
+    console.warn(`  Warning: Source directory not found: ${src}`);
+    return;
+  }
   fs.mkdirSync(dest, { recursive: true });
   const entries = fs.readdirSync(src, { withFileTypes: true });
   for (const entry of entries) {
@@ -141,6 +205,8 @@ function copyFile(src, dest) {
   fs.mkdirSync(path.dirname(dest), { recursive: true });
   if (fs.existsSync(src)) {
     fs.copyFileSync(src, dest);
+  } else {
+    console.warn(`  Warning: Source file not found: ${src}`);
   }
 }
 

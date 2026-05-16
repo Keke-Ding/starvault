@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import { useStore } from '@/store/useStore';
 import ParticleBackground from '@/components/ParticleBackground';
 import SettingsPanel from '@/components/SettingsPanel';
@@ -27,7 +27,7 @@ function App() {
   }, [initBackend]);
 
   return (
-    <BrowserRouter>
+    <HashRouter>
       <SoundProvider>
         <div
           className="relative min-h-screen flex flex-col"
@@ -55,7 +55,7 @@ function App() {
           </div>
         </div>
       </SoundProvider>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
 
