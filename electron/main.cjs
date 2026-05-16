@@ -1,21 +1,65 @@
-const { app: electronApp, BrowserWindow, shell, dialog } = require('electron');
+const { app: electronApp, BrowserWindow, shell, dialog, screen } = require('electron');
 const path = require('path');
+const fs = require('fs');
 
 electronApp.commandLine.appendSwitch('enable-gpu-rasterization');
 electronApp.commandLine.appendSwitch('enable-zero-copy');
 electronApp.commandLine.appendSwitch('disable-software-rasterizer');
 
 const SERVER_PORT = 3001;
+const DEFAULT_WIDTH = 1100;
+const DEFAULT_HEIGHT = 750;
+const MIN_WIDTH = 760;
+const MIN_HEIGHT = 520;
+
 let mainWindow = null;
 let server = null;
 
+function getWindowStatePath() {
+  if (electronApp.isPackaged) {
+    return path.join(electronApp.getPath('userData'), 'window-state.json');
+  }
+  return path.join(__dirname, '..', 'window-state.json');
+}
+
+function loadWindowState() {
+  try {
+    const statePath = getWindowStatePath();
+    if (fs.existsSync(statePath)) {
+      const state = JSON.parse(fs.readFileSync(statePath, 'utf-8'));
+      if (state.x !== undefined && state.y !== undefined && state.width && state.height) {
+        return state;
+      }
+    }
+  } catch (e) {
+    // ignore, use defaults
+  }
+  return null;
+}
+
+function saveWindowState() {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  try {
+    const bounds = mainWindow.getBounds();
+    const isMaximized = mainWindow.isMaximized();
+    const state = { ...bounds, isMaximized };
+    const statePath = getWindowStatePath();
+    const dir = path.dirname(statePath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(statePath, JSON.stringify(state), 'utf-8');
+  } catch (e) {
+    // ignore
+  }
+}
+
 function startServer() {
   return new Promise((resolve, reject) => {
-    let express, corsModule, fs;
+    let express, corsModule;
     try {
       express = require('express');
       corsModule = require('cors');
-      fs = require('fs');
     } catch (e) {
       reject(new Error('缺少必要组件: ' + e.message));
       return;
@@ -170,28 +214,55 @@ function startServer() {
 }
 
 function createWindow() {
-  mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 860,
-    minWidth: 900,
-    minHeight: 600,
+  const savedState = loadWindowState();
+  const windowOptions = {
+    width: DEFAULT_WIDTH,
+    height: DEFAULT_HEIGHT,
+    minWidth: MIN_WIDTH,
+    minHeight: MIN_HEIGHT,
     title: '星穹智识 StarVault',
     backgroundColor: '#0a0a1a',
     show: false,
     frame: true,
     autoHideMenuBar: true,
+    center: true,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
       backgroundThrottling: false,
     },
-  });
+  };
+
+  if (savedState) {
+    windowOptions.x = savedState.x;
+    windowOptions.y = savedState.y;
+    windowOptions.width = savedState.width;
+    windowOptions.height = savedState.height;
+    windowOptions.center = false;
+  }
+
+  mainWindow = new BrowserWindow(windowOptions);
+
+  if (savedState && savedState.isMaximized) {
+    mainWindow.maximize();
+  }
 
   mainWindow.loadURL(`http://localhost:${SERVER_PORT}`);
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
   });
+
+  let saveTimer = null;
+  const debouncedSave = () => {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveWindowState, 300);
+  };
+
+  mainWindow.on('resize', debouncedSave);
+  mainWindow.on('move', debouncedSave);
+  mainWindow.on('maximize', debouncedSave);
+  mainWindow.on('unmaximize', debouncedSave);
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith('http')) {
@@ -201,6 +272,8 @@ function createWindow() {
   });
 
   mainWindow.on('closed', () => {
+    clearTimeout(saveTimer);
+    saveWindowState();
     mainWindow = null;
   });
 }
@@ -235,6 +308,7 @@ electronApp.on('window-all-closed', () => {
 });
 
 electronApp.on('before-quit', () => {
+  saveWindowState();
   if (server) {
     server.close();
   }
